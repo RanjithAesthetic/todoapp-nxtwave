@@ -5,7 +5,7 @@ const path = require("path");
 const bcrypt = require("bcrypt");
 const app = express();
 app.use(express.json());
-const dbPath = path.join(__dirname,"todoApplication.db");
+const dbPath = path.join(__dirname, "todoApplication.db");
 let db = null;
 
 const initializeDBAndServer = async () => {
@@ -42,22 +42,21 @@ app.get("/todos/", async (request, response) => {
   let date = null;
   let getTodoQuery = "";
   const { search_q = "", priority, status } = request.query;
+  switch (true) {
+    case hasPriorityAndStatusProperty(request.query):
+      getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%' AND status ='${status}' AND priority='${priority}';`;
+      break;
 
-  switch(true){
-      case hasPriorityAndStatusProperty(request.query);
-        getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%' AND status ='${status}' AND priority='${priority}';`;
-        break;
+    case hasPriorityProperty(request.query):
+      getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%' AND priority='${priority}';`;
+      break;
 
-      case hasPriorityProperty(request.query);
-        getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%' AND priority='${priority}';`;
-        break;
-     
-      case hasStatusProperty(request.query);
-        getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%'  AND status ='${status}';`;
-        break;
-     
-      default:
-          getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%';`;
+    case hasStatusProperty(request.query):
+      getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%'  AND status ='${status}';`;
+      break;
+
+    default:
+      getTodoQuery = `SELECT * FROM todo WHERE todo LIKE '%${search_q}%';`;
   }
   data = await db.all(getTodoQuery);
   response.send(data);
@@ -65,7 +64,7 @@ app.get("/todos/", async (request, response) => {
 
 app.get("/todos/:todoId/", async (request, response) => {
   const getTodoQuery = `SELECT * FROM todo WHERE id =${todoId};`;
-  const todo = await db.all(getTodoQuery);
+  const todo = await db.get(getTodoQuery);
   response.send(todo);
 });
 
@@ -83,35 +82,33 @@ app.post("/todos/", async (request, response) => {
 
 app.put("/todos/:todoId/", async (request, response) => {
   const { todoId } = request.params;
-  let updateColumn ="";
+  let updateColumn = "";
   const requestBody = request.body;
-  switch(true){
-      case requestBody.status !== undefined;
-      updateColumn ="Status";
+  switch (true) {
+    case requestBody.status !== undefined:
+      updateColumn = "Status";
       break;
 
-      case requestBody.priority !== undefined;
-      updateColumn ="Priority";
+    case requestBody.priority !== undefined:
+      updateColumn = "Priority";
       break;
 
-      case requestBody.todo !== undefined;
-      updateColumn ="Todo";
+    case requestBody.todo !== undefined:
+      updateColumn = "Todo";
       break;
-
   }
   const previousTodoQuery = `SELECT * FROM todo WHERE id=${todoId};`;
   const previousTodo = await db.get(previousTodoQuery);
-  
+
   const {
-      todo = previousTodo.todo,
-      priority = previousTodo.priority,
-      status = previousTodo.status,
+    todo = previousTodo.todo,
+    priority = previousTodo.priority,
+    status = previousTodo.status,
   } = request.body;
 
   const updateTodoQuery = `UPDATE todo SET todo = '${todo}', priority = '${priority}', status ='${status}' WHERE id = ${todoId};`;
   await db.run(updateTodoQuery);
   response.send(`${updateColumn} Updated`);
-
 });
 
 app.delete("/todos/:todoId/", async (request, response) => {
