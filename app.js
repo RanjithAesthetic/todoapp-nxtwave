@@ -26,7 +26,7 @@ initializeDBAndServer();
 
 const hasPriorityAndStatusProperty = (requestQuery) => {
   return (
-    requestQuery.priority !== undefined && requestQuery.status !== undefined
+    requestQuery.priority !== undefined && requestQuery.status !== undefined;
   );
 };
 
